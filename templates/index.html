@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table>
+    {% for page in section.pages %}
+    <tr class="post-row">
+        <td data-label="title" colspan="3">
+            {{ page.date }} &ndash; <a href="{{ page.permalink | safe }}">{{ page.title }}</a>
+        </td>
+    </tr>
+    <tr>
+        <td data-label="has-post-credits"
+            data-value="{% if page.extra.total_scenes %}true{% else %}false{% endif %}"
+        >
+            {% if page.extra.total_scenes > 0 %}YES{% else %}NO{% endif %}
+        </td>
+        <td data-label="mid-credits">
+            {{ page.extra.mid_credits }}
+        </td>
+        <td data-label="post-credits">
+            {{ page.extra.post_credits }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock content %}

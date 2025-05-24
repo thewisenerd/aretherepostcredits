@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ "$#" -ne 4 ]]; then
+    echo "usage: $0 <date> <title> <mid> <post>" >&2
+    exit 1
+fi
+
+DATE="$1"
+TITLE="$2"
+MID="$3"
+POST="$4"
+
+id=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g')
+
+# check date in format "yyyy-MM-dd"
+if ! [[ "$DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    echo "error: date must be in format yyyy-MM-dd" >&2
+    exit 1
+fi
+
+# check mid and post are numbers
+if ! [[ "$MID" =~ ^[0-9]+$ ]] || ! [[ "$POST" =~ ^[0-9]+$ ]]; then
+    echo "error: mid and post must be numbers" >&2
+    exit 1
+fi
+
+# create the file
+FILENAME="$DATE-$id.md"
+if [[ -e "content/$FILENAME" ]]; then
+    echo "error: file $FILENAME already exists" >&2
+    exit 1
+fi
+
+cat << EOF > "content/$FILENAME"
++++
+title = "$TITLE"
+date = $DATE
+[extra]
+total_scenes = $(( MID + POST ))
+mid_credits = $MID
+post_credits = $POST
++++
+EOF
+
+echo "created content/$FILENAME"
+
+if git status --porcelain; then
+    git add "content/$FILENAME"
+    git commit -m "add: $DATE - $TITLE"
+    echo "committed content/$FILENAME"
+
+    if zola build; then
+        echo "zola build successful"
+    else
+        echo "zola build failed, not pushing changes" >&2
+        exit 1
+    fi
+
+    git push
+else
+    echo "changes found, no auto-commit"
+fi
